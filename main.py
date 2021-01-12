@@ -1,6 +1,13 @@
 #!/usr/bin/env python
 import sys
 
+
+def get_base(num_symbols):
+    # TODO: Return the preferred base dependign on how many symbols they are and their
+    #           frequency.
+    return 2
+
+
 if __name__ == "__main__":
     file_name = sys.argv[1]
     print(f"Opening: {file_name} for compression")
@@ -18,8 +25,6 @@ if __name__ == "__main__":
             freq[char] += 1
         print('%s is now %s!' % (char, freq[char]))
 
-    i = 0
-
     for i in sorted(freq.keys()):
         print(i)
 
@@ -29,8 +34,3 @@ if __name__ == "__main__":
     print(freq_sorted)
 
     use_base = get_base(len(freq))
-
-
-def get_base(num_symbols):
-    # return the preferred base dependign on how many symbols they are
-    print("getting bases")
