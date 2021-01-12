@@ -1,5 +1,8 @@
 #!/usr/bin/env python
 import sys
+import struct
+import binascii
+import array
 
 
 def get_base(num_symbols):
@@ -26,9 +29,6 @@ if __name__ == "__main__":
             freq[char] += 1
         print('%s is now %s!' % (char, freq[char]))
 
-    for i in sorted(freq.keys()):
-        print(i)
-
     freq_sorted = {k: v for k, v in sorted(
         freq.items(), key=lambda x: x[1], reverse=True)}
 
@@ -37,17 +37,28 @@ if __name__ == "__main__":
     # hardcoding base 2 at the moment
     charlist = []
     last = ''
+    byte_array_sz = 0
     for i, char in enumerate(freq_sorted):
         print('assign %d with %s and %d' %
               (1 << i, char, freq_sorted[char]))
-        freq_sorted[char] = 1 << i  # change frequency to value now it's sorted
+        # change frequency to encoded value now it's sorted
+        # (encoded value, size in bytes of encoded value)
+        freq_sorted[char] = (1 << i, 1 + int(i/4))
+        byte_array_sz += 1 + int(i/4)
         charlist.append(char)
+        # increment for charlist
+        byte_array_sz += 1
         last = char
+    byte_array_sz += 1
     charlist.append(last)
 
-    encoded = []
-    for char in file_string:
-        encoded.append(freq_sorted[char])
+    encoded = bytearray(byte_array_sz)
+    # encoded = array.array('c', '\0' * byte_array_sz)
+    for i, char in enumerate(file_string):
+        (encoded_value, size_bytes) = freq_sorted[char]
+        packing_string = 'B'*size_bytes
+        i += (size_bytes - 1)  # ew
+        print('pack_bytes: %s' % packing_string)
 
     # todo: convert to ACTUAL binary representation and then base64
 
