@@ -3,12 +3,17 @@ import sys
 import struct
 import binascii
 import array
+import base64
 
 
 def get_base(num_symbols):
     # TODO: Return the preferred base dependign on how many symbols they are and their
     #           frequency.
     return 2
+
+
+def get_size_shift(shift_value):
+    return 1 + int(shift_value/8)
 
 
 if __name__ == "__main__":
@@ -27,8 +32,6 @@ if __name__ == "__main__":
             freq[char] = 1
         else:
             freq[char] += 1
-        print('%s is now %s!' % (char, freq[char]))
-
     freq_sorted = {k: v for k, v in sorted(
         freq.items(), key=lambda x: x[1], reverse=True)}
 
@@ -39,12 +42,13 @@ if __name__ == "__main__":
     last = ''
     byte_array_sz = 0
     for i, char in enumerate(freq_sorted):
+        # shift amount has to start at 1 not zero
         print('assign %d with %s and %d' %
               (1 << i, char, freq_sorted[char]))
         # change frequency to encoded value now it's sorted
         # (encoded value, size in bytes of encoded value)
-        freq_sorted[char] = (1 << i, 1 + int(i/4))
-        byte_array_sz += 1 + int(i/4)
+        freq_sorted[char] = (1 << i, get_size_shift(i))
+        byte_array_sz += get_size_shift(i)
         charlist.append(char)
         # increment for charlist
         byte_array_sz += 1
@@ -52,13 +56,28 @@ if __name__ == "__main__":
     byte_array_sz += 1
     charlist.append(last)
 
-    encoded = bytearray(byte_array_sz)
+    # encoded = bytearray(byte_array_sz)
+    encoded = bytearray(0)
     # encoded = array.array('c', '\0' * byte_array_sz)
     for i, char in enumerate(file_string):
         (encoded_value, size_bytes) = freq_sorted[char]
-        packing_string = 'B'*size_bytes
-        i += (size_bytes - 1)  # ew
-        print('pack_bytes: %s' % packing_string)
+        # packing_string = 'B'*size_bytes
+        # print('pack_bytes: %s' % packing_string)
+        # i += (size_bytes - 1)  # ew
+        bt = encoded_value.to_bytes(size_bytes, byteorder='big')
+        encoded += bt
+        # encoded.append(bytearray(bt))
+        print('char: %c enc: %d, sz: %d' % (char, encoded_value, size_bytes))
+        print(binascii.hexlify(bt))
+    print(binascii.hexlify(encoded))
+    b64encoded = base64.b64encode(encoded)
+    print(b64encoded)
+    # first_set_byte = 0
+    # for i, byte in enumerate(bt):
+    #     if byte is b'\x00':
+    #         first_set_byte = i
+    #         break
+    # print('fsb: %d' % first_set_byte)
 
     # todo: convert to ACTUAL binary representation and then base64
 
