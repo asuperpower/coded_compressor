@@ -1,8 +1,10 @@
 # coded_compressor
 
-Quick and dirty compressor attempt
+Symbol coded file compressor
 
 ### Description
 
-Uses some sort of coding which maps symbols to codes
-Coding base depends on number of symbols
+Creates a symbol map that is in the header
+Duplicate symbol = end of header
+Sorts the map by frequency and assigns binary codes to each symbol
+Coding base depends on number of symbols (TODO)
