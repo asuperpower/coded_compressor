@@ -65,7 +65,7 @@ if __name__ == "__main__":
     byte_array_sz += 1
     charlist.append(last)
 
-    encoded = bytearray(byte_array_sz)
+    encoded = bytearray(0)
     carry = np.uint8(0)
     idx = 0
     print('')
@@ -78,26 +78,19 @@ if __name__ == "__main__":
         print(np.unpackbits(carry.reshape(-1, 1), axis=1))
         carry = np.uint8((1 << 7 - idx) | (carry))
         idx += gmpy.scan1(encoded_value) + 1
-        print('char: %c enc: %d, idx: %d, carry: %s' %
-              (char, encoded_value, idx, hex(int.from_bytes(carry, byteorder='big', signed=False))))
+        print('char: %c enc: %s, idx: %d, carry: %s' %
+              (char, hex(encoded_value), idx, hex(int.from_bytes(carry, byteorder='big', signed=False))))
 
-        it = 0
+        # overflow
         while idx >= 8:
             idx -= 8
-            if it > 0:
-                carry = np.uint8(0)
-            encoded += carry
+            encoded.append(carry)
+            carry = np.uint8(0)
             print('encoded carry: %d' %
                   (int.from_bytes(carry, byteorder='big', signed=False)))
-            it += 1
-
-        # bt = encoded_value.to_bytes(size_bytes, byteorder='big')
-        # if sz > 1
-        # encoded += bt[1:sz-1]
-        # encoded.append(bytearray(bt))
-        # print(binascii.hexlify(bt))
+        print('encoded: %s', binascii.hexlify(encoded))
     # todo: make last char work by putting padding idx in header
-    encoded += carry
+    encoded.append(carry)
     print(binascii.hexlify(encoded))
     # first_set_byte = 0
     # for i, byte in enumerate(bt):
