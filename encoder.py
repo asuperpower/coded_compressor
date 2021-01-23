@@ -6,6 +6,8 @@ import array
 import base64
 import gmpy
 import numpy as np
+import matplotlib.pyplot as plt
+plt.rcdefaults()
 
 
 def get_base(num_symbols):
@@ -25,6 +27,24 @@ def ffs(x):
     return (x & -x).bit_length()-1
 
 
+# FILE SPEC:
+#   |##############################################################################|
+#   | Header                                                                | Data |
+#   | Character List | Duplicate last character (END) | Final IDX (1 byte)  | Data |
+#   |##############################################################################|
+#
+#   Character List
+#   List of symbols in order of occurence. First (most frequent) symbol gets mapped to
+#   0x1, second 0x10, third 0x100 and so fourth.
+#   Duplicate last character
+#   The final character is duplicated to signal the end of the character list.
+#   Final IDX
+#   The file ending may not align on a (byte) bondary. It could end a few bits earlier, so
+#   the
+#   final index tells us where it ends.
+#   All the rest in the file is data
+
+
 if __name__ == "__main__":
     file_in = sys.argv[1]
     file_out = sys.argv[2]
@@ -33,6 +53,8 @@ if __name__ == "__main__":
     f = open(file_in, "r")
     file_string = f.read()
     f.close()
+
+    input_size = len(file_string.encode('utf-8'))
 
     freq = {}
 
@@ -44,9 +66,6 @@ if __name__ == "__main__":
     freq_sorted = {k: v for k, v in sorted(
         freq.items(), key=lambda x: x[1], reverse=True)}
 
-    # charlist in header -- first symbol is 0b, second 10b, third 100b etc.
-    # duplicate symbol ends charlist
-    # hardcoding base 2 at the moment
     charlist = []
     last = ''
     byte_array_sz = 0
@@ -54,7 +73,7 @@ if __name__ == "__main__":
         # shift amount has to start at 1 not zero
         print('assign %d with %s and %d' %
               (1 << i, char, freq_sorted[char]))
-        # change frequency to encoded value now it's sorted
+        # Change frequency to encoded value now it's sorted
         # (encoded value, size in bytes of encoded value)
         freq_sorted[char] = (1 << i, get_size_shift(i))
         byte_array_sz += get_size_shift(i)
@@ -68,42 +87,42 @@ if __name__ == "__main__":
     encoded = bytearray(0)
     carry = np.uint8(0)
     idx = 0
-    print('')
-    print('idx: %d' % (idx))
-    print('')
     # encoded = array.array('c', '\0' * byte_array_sz)
     for i, char in enumerate(file_string):
         (encoded_value, size_bytes) = freq_sorted[char]
-        # print('value is: %s' % (struct.unpack('B', carry)))
-        print(np.unpackbits(carry.reshape(-1, 1), axis=1))
         carry = np.uint8((1 << 7 - idx) | (carry))
         idx += gmpy.scan1(encoded_value) + 1
-        print('char: %c enc: %s, idx: %d, carry: %s' %
-              (char, hex(encoded_value), idx, hex(int.from_bytes(carry, byteorder='big', signed=False))))
 
         # overflow
         while idx >= 8:
             idx -= 8
             encoded.append(carry)
             carry = np.uint8(0)
-            print('encoded carry: %d' %
-                  (int.from_bytes(carry, byteorder='big', signed=False)))
-        print('encoded: %s', binascii.hexlify(encoded))
     # todo: make last char work by putting padding idx in header
     encoded.append(carry)
-    print(binascii.hexlify(encoded))
-    # first_set_byte = 0
-    # for i, byte in enumerate(bt):
-    #     if byte is b'\x00':
-    #         first_set_byte = i
-    #         break
-    # print('fsb: %d' % first_set_byte)
+    header = bytearray()
+    # for bt in charlist:
+    #     if bt not in range(0, 256):
+    # print(hex(bt))
+    header.extend(map(ord, charlist))
+    header.append(np.uint8(idx))
 
-    # todo: convert to ACTUAL binary representation and then base64
+    print('Compressed file\nHeader:\n%s\nData:\n%s' %
+          (header, binascii.hexlify(encoded)))
+    file = header + encoded
 
-    # print("Compressed file: " + charlist + encoded)
+    f = open(file_out, 'wb')
+    f.write(file)
+    f.close()
 
-    # print(f"Saving compressed file: {file_out}")
-    # f = open(file_out, "x")
-    # f.write(charlist + encoded)
-    # f.close()
+    output_size = len(file)
+    objects = ('Input File', 'Output File')
+    y_pos = np.arange(len(objects))
+    results = (input_size, output_size)
+
+    plt.bar(y_pos, results, align='center', alpha=0.5)
+    plt.xticks(y_pos, objects)
+    plt.ylabel('Size (bytes)')
+    plt.title('File size (input vs output file)')
+
+    plt.show()
