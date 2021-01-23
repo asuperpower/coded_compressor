@@ -4,16 +4,25 @@ import struct
 import binascii
 import array
 import base64
+import gmpy
+import numpy as np
 
 
 def get_base(num_symbols):
     # TODO: Return the preferred base dependign on how many symbols they are and their
-    #           frequency.
+    #           frequency. Requires some math.
     return 2
 
 
 def get_size_shift(shift_value):
     return 1 + int(shift_value/8)
+
+
+def ffs(x):
+    """Returns the index, counting from 0, of the
+    least significant set bit in `x`.
+    """
+    return (x & -x).bit_length()-1
 
 
 if __name__ == "__main__":
@@ -56,22 +65,40 @@ if __name__ == "__main__":
     byte_array_sz += 1
     charlist.append(last)
 
-    # encoded = bytearray(byte_array_sz)
-    encoded = bytearray(0)
+    encoded = bytearray(byte_array_sz)
+    carry = np.uint8(0)
+    idx = 0
+    print('')
+    print('idx: %d' % (idx))
+    print('')
     # encoded = array.array('c', '\0' * byte_array_sz)
     for i, char in enumerate(file_string):
         (encoded_value, size_bytes) = freq_sorted[char]
-        # packing_string = 'B'*size_bytes
-        # print('pack_bytes: %s' % packing_string)
-        # i += (size_bytes - 1)  # ew
-        bt = encoded_value.to_bytes(size_bytes, byteorder='big')
-        encoded += bt
+        # print('value is: %s' % (struct.unpack('B', carry)))
+        print(np.unpackbits(carry.reshape(-1, 1), axis=1))
+        carry = np.uint8((1 << 7 - idx) | (carry))
+        idx += gmpy.scan1(encoded_value) + 1
+        print('char: %c enc: %d, idx: %d, carry: %s' %
+              (char, encoded_value, idx, hex(int.from_bytes(carry, byteorder='big', signed=False))))
+
+        it = 0
+        while idx >= 8:
+            idx -= 8
+            if it > 0:
+                carry = np.uint8(0)
+            encoded += carry
+            print('encoded carry: %d' %
+                  (int.from_bytes(carry, byteorder='big', signed=False)))
+            it += 1
+
+        # bt = encoded_value.to_bytes(size_bytes, byteorder='big')
+        # if sz > 1
+        # encoded += bt[1:sz-1]
         # encoded.append(bytearray(bt))
-        print('char: %c enc: %d, sz: %d' % (char, encoded_value, size_bytes))
-        print(binascii.hexlify(bt))
+        # print(binascii.hexlify(bt))
+    # todo: make last char work by putting padding idx in header
+    encoded += carry
     print(binascii.hexlify(encoded))
-    b64encoded = base64.b64encode(encoded)
-    print(b64encoded)
     # first_set_byte = 0
     # for i, byte in enumerate(bt):
     #     if byte is b'\x00':
