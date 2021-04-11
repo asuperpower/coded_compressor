@@ -98,13 +98,19 @@ def compress(charlist, freq_sorted):
 #   final index tells us where it ends.
 #   All the rest in the file is data
 if __name__ == "__main__":
-    file_in = sys.argv[1]
-    file_out = sys.argv[2]
+    try:
+        file_in = sys.argv[1]
+        file_out = sys.argv[2]
+    except:
+        print("Usage: encoder.py <INPUT FILE> <OUTPUT FILE>")
     print(f"Opening: {file_in} for compression")
 
-    f = open(file_in, "r")
-    file_string = f.read()
-    f.close()
+    try:
+        f = open(file_in, "r")
+        file_string = f.read()
+        f.close()
+    except:
+        print("Could not open file: {file_in}")
 
     input_size = len(file_string.encode('utf-8'))
 

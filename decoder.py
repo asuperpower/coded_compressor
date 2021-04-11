@@ -1,5 +1,27 @@
+#!/usr/bin/env python
+import sys
+
+
 def get_charlist_from_header(file_string):
-    return (0, 0, 0)
+    charlist = []
+    previous_byte = 0
+    idx = 0
+    for i, char in enumerate(file_string):
+        if previous_byte == char and i != 0:
+            # end of char list
+            idx = i
+            break
+        else:
+            charlist.append(char)
+            previous_byte = char
+    return (charlist, idx+1, file_string[idx+1])
+
+
+def decompress_file(charlist, compressed_data):
+    for char in enumerate(compressed_data):
+        carry = []
+        i = 0
+    return 0
 
 
 # FILE SPEC:
@@ -23,12 +45,15 @@ if __name__ == "__main__":
     file_out = sys.argv[2]
     print(f"Opening: {file_in} for decompression")
 
-    f = open(file_in, "r")
+    f = open(file_in, "r", encoding="ISO-8859-1")
     file_string = f.read()
     f.close()
 
-    input_size = len(file_string.encode('utf-8'))
+    # input_size = len(file_string.encode('utf-8'))
 
     (charlist, data_start_idx, final_idx) = get_charlist_from_header(file_string)
+    print(
+        'list: %s\ndata_start_idx: %s\nfinal_idx: %s'
+        % (charlist, data_start_idx, final_idx))
 
-    decompressed_file = decompress_file(charlist, data_start_idx)
+    decompressed_file = decompress_file(charlist, compressed_data)
